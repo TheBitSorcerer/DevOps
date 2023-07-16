@@ -1,0 +1,44 @@
+# Base image
+FROM python:3.9-alpine
+
+# Install Azure CLI
+RUN apk update && apk add --no-cache curl
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# Install dependencies for Kubelogin and kubectl
+RUN apk add --no-cache git make
+
+# Clone Kubelogin repository
+RUN git clone https://github.com/Azure/kubelogin.git
+
+# Build and install Kubelogin
+WORKDIR /kubelogin
+RUN make
+RUN make install
+
+# Install kubectl
+RUN apk add --no-cache curl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Set entrypoint
+ENTRYPOINT ["az"]
+
+# Set default command
+CMD ["--version"]
+
+------------------------------------------------------------------------------------------------------------------------------
+This Dockerfile builds upon the previous one and adds the installation of kubectl alongside Azure CLI and Kubelogin.
+
+Here's a breakdown of the added instructions:
+
+-We install curl to download the kubectl binary.
+-We use curl to fetch the latest stable version of kubectl from the official Kubernetes release page.
+-We use the install command to copy the downloaded kubectl binary to the /usr/local/bin directory with appropriate permissions.
+
+To build the Docker image, navigate to the directory containing the Dockerfile and run the following command:
+
+
+docker build -t my-azure-cli-kubelogin-kubectl-image .
+
+This command will build the Docker image with the specified tag (my-azure-cli-kubelogin-kubectl-image in this case). Once the build process is complete, you can run a container based on this image using the docker run comman
